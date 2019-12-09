@@ -1,6 +1,12 @@
 all:
 	@gcc DUMBclient.c -o DUMBclient
-	@gcc DUMBserve.c -o DUMBserve
+	@gcc DUMBserver.c -o DUMBserve
+
+client:
+	@gcc DUMBclient.c -o DUMBclient
+
+serve:
+	@gcc DUMBserver.c -o DUMBserve
 
 clean:
 	@rm *.o
