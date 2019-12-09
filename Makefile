@@ -9,4 +9,4 @@ serve:
 	@gcc DUMBserver.c -o DUMBserve
 
 clean:
-	@rm *.o
+	@rm ./DUMBserve ./DUMBclient
