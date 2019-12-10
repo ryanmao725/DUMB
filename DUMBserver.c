@@ -1,10 +1,12 @@
-#include<unistd.h>
-#include<stdlib.h>
-#include<stdio.h>
+#include "DUMBserver.h"
 
 int main(int argc, char** argv) {
     if (argc == 1) {
-        printf("YAYY SUCK MY DICK\n");
+        
+    } else {
+        printf("Invalid arguments. Expecting port number\n");
+        return 1;
     }
     return 0;
 }
+
