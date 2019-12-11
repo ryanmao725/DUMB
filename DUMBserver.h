@@ -9,7 +9,18 @@
 #include <stdio.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
+#include <pthread.h>
 
-void setup(int port);
+typedef struct connectionInput {
+    pthread_t* id;
+    int connection;
+    char* buffer;
+} ConnectionInput;
+
+struct sockaddr_in createAddress(int port);
+int socketSetup(struct sockaddr_in address);
+void socketLoop(struct sockaddr_in address, int mainSocket);
+void* connectionWorker(void* vargp);
 
 #endif  // DUMBSERVER_H_
