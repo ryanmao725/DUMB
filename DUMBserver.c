@@ -154,37 +154,41 @@ void* connectionWorker(void* vargp) {
     while(valread != 0) {
         char* buffer = (char*)malloc(sizeof(char) * 1024);
         valread = read(connection, buffer, 1024);
-        printEvent(connection, buffer);
-        // Read the first 5 characters to extract the command
-        char cmd[5];
-        strncpy(cmd, buffer, 5);
-        if (strlen(cmd) != 5) {
-            printError(connection, "> ER:WHAT?");
-            respond(connection, "ER:WHAT?");
-        } else {
-            if (strcmp(cmd, "HELLO") == 0) {
-                printEvent(connection, "> HELLO DUMBv0 ready!");
-                respond(connection, "HELLO DUMBv0 ready!");
-            } else if (strcmp(cmd, "GDBYE") == 0) {
-                printEvent(connection, "> Killed");
-                close(connection);
-                valread = 0;
-            } else if (strcmp(cmd, "CREAT") == 0) {
-                OPEN_BOX = boxCreate(connection, buffer, OPEN_BOX);
-            } else if (strcmp(cmd, "OPNBX") == 0) {
-                OPEN_BOX = boxOpen(connection, buffer, OPEN_BOX);
-            } else if (strcmp(cmd, "NXTMG") == 0) {
-                OPEN_BOX = boxGet(connection, buffer, OPEN_BOX);
-            } else if (strcmp(cmd, "PUTMG") == 0) {
-                OPEN_BOX = boxPut(connection, buffer, OPEN_BOX);
-            } else if (strcmp(cmd, "DELBX") == 0) {
-                OPEN_BOX = boxDelete(connection, buffer, OPEN_BOX);
-            } else if (strcmp(cmd, "CLSBX") == 0) {
-                OPEN_BOX = boxClose(connection, buffer, OPEN_BOX);
-            } else {
+        if (strlen(buffer) > 0) {
+            printEvent(connection, buffer);
+            // Read the first 5 characters to extract the command
+            char cmd[5];
+            strncpy(cmd, buffer, 5);
+            if (strlen(cmd) != 5) {
                 printError(connection, "> ER:WHAT?");
                 respond(connection, "ER:WHAT?");
+            } else {
+                if (strcmp(cmd, "HELLO") == 0) {
+                    printEvent(connection, "> HELLO DUMBv0 ready!");
+                    respond(connection, "HELLO DUMBv0 ready!");
+                } else if (strcmp(cmd, "GDBYE") == 0) {
+                    printEvent(connection, "> Killed");
+                    close(connection);
+                    valread = 0;
+                } else if (strcmp(cmd, "CREAT") == 0) {
+                    OPEN_BOX = boxCreate(connection, buffer, OPEN_BOX);
+                } else if (strcmp(cmd, "OPNBX") == 0) {
+                    OPEN_BOX = boxOpen(connection, buffer, OPEN_BOX);
+                } else if (strcmp(cmd, "NXTMG") == 0) {
+                    OPEN_BOX = boxGet(connection, buffer, OPEN_BOX);
+                } else if (strcmp(cmd, "PUTMG") == 0) {
+                    OPEN_BOX = boxPut(connection, buffer, OPEN_BOX);
+                } else if (strcmp(cmd, "DELBX") == 0) {
+                    OPEN_BOX = boxDelete(connection, buffer, OPEN_BOX);
+                } else if (strcmp(cmd, "CLSBX") == 0) {
+                    OPEN_BOX = boxClose(connection, buffer, OPEN_BOX);
+                } else {
+                    printError(connection, "> ER:WHAT?");
+                    respond(connection, "ER:WHAT?");
+                }
             }
+        } else {
+            valread = 0;
         }
     }
     // The client disconnected
@@ -205,7 +209,6 @@ MessageBox* boxCreate(int connection, char* buffer, MessageBox* OPEN_BOX) {
                 // Verify that this doesn't exist already
                 MessageBox* ptr = boxes;
                 while (ptr != NULL) {
-                    printf("%s, %s\n", ptr->name, name);
                     if (strcmp(ptr->name, name) == 0) {
                         // We have a duplicate
                         printError(connection, "> ER:EXIST");
@@ -222,8 +225,8 @@ MessageBox* boxCreate(int connection, char* buffer, MessageBox* OPEN_BOX) {
                     boxes->messages = NULL;
                     boxes->next = NULL;
                     boxes->isOpen = 0;
-                    printEvent(connection, "> Ok!");
-                    respond(connection, "Ok!");
+                    printEvent(connection, "> OK!");
+                    respond(connection, "OK!");
                     return OPEN_BOX;
                 }
                 while (ptr->next != NULL) {
@@ -234,8 +237,8 @@ MessageBox* boxCreate(int connection, char* buffer, MessageBox* OPEN_BOX) {
                 ptr->next->messages = NULL;
                 ptr->next->next = NULL;
                 ptr->next->isOpen = 0;
-                printEvent(connection, "> Ok!");
-                respond(connection, "Ok!");
+                printEvent(connection, "> OK!");
+                respond(connection, "OK!");
                 return OPEN_BOX;
             }
         }
@@ -254,40 +257,33 @@ MessageBox* boxOpen(int connection, char* buffer, MessageBox* OPEN_BOX) {
             // Verify that it starts with an alphabetical character
             char c = (char)name[0];
             if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
-                // Verify that this doesn't exist already
+                // Verify that this box exists already
                 MessageBox* ptr = boxes;
                 while (ptr != NULL) {
-                    printf("%s, %s\n", ptr->name, name);
                     if (strcmp(ptr->name, name) == 0) {
-                        // We have a duplicate
-                        printError(connection, "> ER:EXIST");
-                        respond(connection, "ER:EXIST");
-                        return OPEN_BOX;
+                        // We have a match! Verify that this is not opened by anyone else
+                        if (ptr->isOpen == 1) {
+                            printError(connection, "> ER:OPEND");
+                            respond(connection, "ER:OPEND");
+                            return OPEN_BOX;
+                        } else {
+                            // Verify that there isn't an open box
+                            if (OPEN_BOX != NULL) {
+                                printError(connection, "> ER:NCLSD");
+                                respond(connection, "ER:NCLSD");
+                                return OPEN_BOX;
+                            }
+                            ptr->isOpen = 1;
+                            printEvent(connection, "> OK!");
+                            respond(connection, "OK!");
+                            return ptr;
+                        }
                     }
                     ptr = ptr->next;
                 }
-                // Doesn't already exist, lets add it in
-                ptr = boxes;
-                if (ptr == NULL) {
-                    boxes = (MessageBox*)malloc(sizeof(MessageBox));
-                    boxes->name = name;
-                    boxes->messages = NULL;
-                    boxes->next = NULL;
-                    boxes->isOpen = 0;
-                    printEvent(connection, "> Ok!");
-                    respond(connection, "Ok!");
-                    return OPEN_BOX;
-                }
-                while (ptr->next != NULL) {
-                    ptr = ptr->next;
-                }
-                ptr->next = (MessageBox*)malloc(sizeof(MessageBox));
-                ptr->next->name = name;
-                ptr->next->messages = NULL;
-                ptr->next->next = NULL;
-                ptr->next->isOpen = 0;
-                printEvent(connection, "> Ok!");
-                respond(connection, "Ok!");
+                // If we didn't find anything, we know that this doesn't exist
+                printError(connection, "> ER:NEXST");
+                respond(connection, "ER:NEXST");
                 return OPEN_BOX;
             }
         }
@@ -307,5 +303,42 @@ MessageBox* boxDelete(int connection, char* buffer, MessageBox* OPEN_BOX) {
     return OPEN_BOX;
 }
 MessageBox* boxClose(int connection, char* buffer, MessageBox* OPEN_BOX) {
+    if (OPEN_BOX == NULL) {
+        printError(connection, "> ER:NOOPN");
+        respond(connection, "ER:NOOPN");
+        return OPEN_BOX;
+    }
+    // Verify that there is an argument
+    if (*(buffer + 5) == ' ') {
+        char* name = buffer + 6;
+        // Verify that the length is between 5 and 25
+        if (strlen(name) >= 5 && strlen(name) <= 25) {
+            // Verify that it starts with an alphabetical character
+            char c = (char)name[0];
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                if (strcmp(OPEN_BOX->name, name) == 0) {
+                    if (OPEN_BOX->isOpen == 0) {
+                        printError(connection, "> ER:NOOPN");
+                        respond(connection, "ER:NOOPN");
+                        return OPEN_BOX;
+                    } else {
+                        OPEN_BOX->isOpen = 0;
+                        printEvent(connection, "> OK!");
+                        respond(connection, "OK!");
+                        return NULL;
+                    }
+                } else {
+                    // In the case we want to close any box regardless of whether the use has it open.....
+                    printError(connection, "> ER:NOOPN");
+                    respond(connection, "ER:NOOPN");
+                    return OPEN_BOX;
+                }
+            }
+        }
+    }
+    // Malformed input
+    printError(connection, "> ER:WHAT?");
+    respond(connection, "ER:WHAT?");
     return OPEN_BOX;
+
 }
