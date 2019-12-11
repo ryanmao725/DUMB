@@ -74,6 +74,8 @@ void socketLoop(struct sockaddr_in address, int masterSocket) {
             printf("Error: Failed to accept new connection");
             exit(1);
         } else {
+            //printf("Received client connection\n");
+            printEvent(connection, "Connected");
             // Read the incoming connection
             char buffer[1024] = {0};
             read(connection, buffer, 1024);
@@ -90,13 +92,41 @@ void socketLoop(struct sockaddr_in address, int masterSocket) {
     }
 }
 
+
+void _print(FILE* stream, int socket, char* message) {
+    struct sockaddr_in address;
+    int addrlen = sizeof(address);
+    getpeername(socket, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+    char str[INET6_ADDRSTRLEN];
+    inet_ntop( AF_INET, &address.sin_addr, str, INET6_ADDRSTRLEN);
+    time_t now = time(NULL);
+    struct tm* now_tm = localtime(&now);
+    fprintf(stream, "%02d:%02d %02d %s %s %s\n", now_tm->tm_hour, now_tm->tm_min, now_tm->tm_mday, MONTH[now_tm->tm_mon], str, message);
+}
+
+void printEvent(int socket, char* message) {
+    _print(stdout, socket, message);
+}
+
+void printError(int socket, char* message) {
+    _print(stderr, socket, message);
+}
+
+
 void* connectionWorker(void* vargp) {
     ConnectionInput* input = (ConnectionInput*) vargp;
     int connection = input->connection;
     char* buffer = (char*)malloc(sizeof(char) * 1024);
-    printf("From %d, Received %s\n", connection, input->buffer);
-    while(1) {
-        int valread = read(connection, buffer, 1024);
-        printf("From Thread %d: %s\n", valread, buffer);
+    int valread = -1;
+    while(valread != 0) {
+        valread = read(connection, buffer, 1024);
+        int i = 0;
+        while (i < valread) {
+            printEvent(connection, buffer + i);
+            i += strlen(buffer) + 1;
+        }
+    }
+    if (valread == 0) {
+        printEvent(connection, "Disconnected");
     }
 }

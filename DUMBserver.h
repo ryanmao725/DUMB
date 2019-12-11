@@ -11,6 +11,8 @@
 #include <netinet/in.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
+#include <time.h>
 
 typedef struct connectionInput {
     pthread_t* id;
@@ -18,9 +20,27 @@ typedef struct connectionInput {
     char* buffer;
 } ConnectionInput;
 
+char* MONTH[12] = {
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec"
+};
+
 struct sockaddr_in createAddress(int port);
 int socketSetup(struct sockaddr_in address);
 void socketLoop(struct sockaddr_in address, int mainSocket);
 void* connectionWorker(void* vargp);
+
+void printEvent(int socket, char* message);
+void printError(int socket, char* message);
 
 #endif  // DUMBSERVER_H_
