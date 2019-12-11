@@ -137,9 +137,9 @@ void* connectionWorker(void* vargp) {
     while(valread != 0) {
         valread = read(connection, buffer, 1024);
         int i = 0;
-        while (i < valread) {
+        while (strlen(buffer + i) > 0) {
             printEvent(connection, buffer + i);
-            i += strlen(buffer) + 1;
+            i += strlen(buffer + i) + 1;
         }
     }
     if (valread == 0) {
