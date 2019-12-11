@@ -7,5 +7,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+
+void setup(int port);
 
 #endif  // DUMBSERVER_H_
