@@ -74,20 +74,26 @@ void socketLoop(struct sockaddr_in address, int masterSocket) {
             printf("Error: Failed to accept new connection");
             exit(1);
         } else {
-            //printf("Received client connection\n");
-            printEvent(connection, "Connected");
             // Read the incoming connection
             char buffer[1024] = {0};
             read(connection, buffer, 1024);
-            // Create the child thread
-            pthread_t child;
-            // Construct the necessary inputs to this child thread
-            ConnectionInput* conIn = (ConnectionInput*)malloc(sizeof(ConnectionInput));
-            conIn->id = &child;
-            conIn->connection = connection;
-            conIn->buffer = buffer;
-            // Create the thread to handle this connection
-            pthread_create(&child, NULL, connectionWorker, (void*)conIn);
+            // Verify that we have a DUMB client connected
+            if (strcmp(buffer, "HELLO") == 0) {
+                printEvent(connection, "Connected");
+                // Create the child thread
+                pthread_t child;
+                // Construct the necessary inputs to this child thread
+                ConnectionInput* conIn = (ConnectionInput*)malloc(sizeof(ConnectionInput));
+                conIn->id = &child;
+                conIn->connection = connection;
+                conIn->buffer = buffer;
+                // Create the thread to handle this connection
+                pthread_create(&child, NULL, connectionWorker, (void*)conIn);
+            } else {
+                printError(connection, "ER:INVCL");
+                respond(connection, "ER:INVCL\0");
+                close(connection);
+            }
         }
     }
 }
@@ -112,12 +118,17 @@ void printError(int socket, char* message) {
     _print(stderr, socket, message);
 }
 
+void respond(int socket, char* message) {
+    send(socket, message, strlen(message), 0);
+}
+
 
 void* connectionWorker(void* vargp) {
     ConnectionInput* input = (ConnectionInput*) vargp;
     int connection = input->connection;
     char* buffer = (char*)malloc(sizeof(char) * 1024);
     int valread = -1;
+    printEvent(connection, input->buffer);
     while(valread != 0) {
         valread = read(connection, buffer, 1024);
         int i = 0;

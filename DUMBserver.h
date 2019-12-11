@@ -42,5 +42,8 @@ void* connectionWorker(void* vargp);
 
 void printEvent(int socket, char* message);
 void printError(int socket, char* message);
+void _print(FILE* stream, int socket, char* message);
+
+void respond(int socket, char* message);
 
 #endif  // DUMBSERVER_H_
