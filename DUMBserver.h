@@ -14,6 +14,17 @@
 #include <string.h>
 #include <time.h>
 
+typedef struct messageQueue {
+    int length;
+    char* message;
+    struct messageQueue* next;
+} Message;
+
+typedef struct messageBox {
+    char* name;
+    Message* messages;
+} MessageBox;
+
 typedef struct connectionInput {
     pthread_t* id;
     int connection;
@@ -45,5 +56,11 @@ void printError(int socket, char* message);
 void _print(FILE* stream, int socket, char* message);
 
 void respond(int socket, char* message);
+
+int boxCreate(char* name);
+int boxDelete(char* name);
+MessageBox boxGet(char* name);
+int boxAddMessage(char* name, char* message, int length);
+Message boxNextMessage(char* name);
 
 #endif  // DUMBSERVER_H_

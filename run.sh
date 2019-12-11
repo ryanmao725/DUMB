@@ -3,4 +3,4 @@
 set -e
 clear
 make serve
-./DUMBserve 51111
+./DUMBserve 8000

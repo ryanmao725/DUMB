@@ -12,8 +12,13 @@ int main(int argc, char** argv) {
     }
     // Since we have the number of inputs verified, lets parse through them
     char* portString = argv[1];
+    int port = atoi(portString);
+    if (port < 1000) {
+        printf("Error: Invalid port number. Port must be greater than 1000\n");
+        return 1;
+    }
     // Create the address
-    struct sockaddr_in address = createAddress(8000);
+    struct sockaddr_in address = createAddress(port);
     // Construct the socket
     int masterSocket = socketSetup(address);
     if (masterSocket < 0) {
@@ -36,7 +41,7 @@ struct sockaddr_in createAddress(int port) {
 int socketSetup(struct sockaddr_in address) {
     int success = 0;
     // Notify that we are spawning the server
-    printf("Spawning server\n");
+    printf("Spawning server on port %d\n", ntohs(address.sin_port));
     // Create the socket to the port
     int socketServer = socket(AF_INET, SOCK_STREAM, 0);
     if (socketServer == 0) { // Verify that we were able to create a socket
@@ -89,6 +94,7 @@ void socketLoop(struct sockaddr_in address, int masterSocket) {
                 conIn->buffer = buffer;
                 // Create the thread to handle this connection
                 pthread_create(&child, NULL, connectionWorker, (void*)conIn);
+                respond(connection, "HELLO DUMPv0 ready!");
             } else {
                 printError(connection, "ER:INVCL");
                 respond(connection, "ER:INVCL\0");
@@ -104,7 +110,7 @@ void _print(FILE* stream, int socket, char* message) {
     int addrlen = sizeof(address);
     getpeername(socket, (struct sockaddr*)&address, (socklen_t*)&addrlen);
     char str[INET6_ADDRSTRLEN];
-    inet_ntop( AF_INET, &address.sin_addr, str, INET6_ADDRSTRLEN);
+    inet_ntop(AF_INET, &address.sin_addr, str, INET6_ADDRSTRLEN);
     time_t now = time(NULL);
     struct tm* now_tm = localtime(&now);
     fprintf(stream, "%02d:%02d %02d %s %s %s\n", now_tm->tm_hour, now_tm->tm_min, now_tm->tm_mday, MONTH[now_tm->tm_mon], str, message);
@@ -121,7 +127,6 @@ void printError(int socket, char* message) {
 void respond(int socket, char* message) {
     send(socket, message, strlen(message), 0);
 }
-
 
 void* connectionWorker(void* vargp) {
     ConnectionInput* input = (ConnectionInput*) vargp;
