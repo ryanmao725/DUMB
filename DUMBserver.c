@@ -300,7 +300,57 @@ MessageBox* boxPut(int connection, char* buffer, MessageBox* OPEN_BOX) {
     return OPEN_BOX;
 }
 MessageBox* boxDelete(int connection, char* buffer, MessageBox* OPEN_BOX) {
+    // Verify that there is an argument
+    if (*(buffer + 5) == ' ') {
+        char* name = buffer + 6;
+        // Verify that the length is between 5 and 25
+        if (strlen(name) >= 5 && strlen(name) <= 25) {
+            // Verify that it starts with an alphabetical character
+            char c = (char)name[0];
+            if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) {
+                // Verify that this box exists already
+                MessageBox* ptr = boxes;
+                MessageBox* parent = NULL;
+                while (ptr != NULL) {
+                    if (strcmp(ptr->name, name) == 0) {
+                        // We have a match! Verify that this is not opened by anyone else
+                        if (ptr->isOpen == 1) {
+                            printError(connection, "> ER:OPEND");
+                            respond(connection, "ER:OPEND");
+                            return OPEN_BOX;
+                        } else {
+                            // Verify that the messages are empty
+                            if (ptr->messages != NULL) {
+                                printError(connection, "> ER:NOTMT");
+                                respond(connection, "ER:NOTMT");
+                                return OPEN_BOX;
+                            }
+                            // We can safely delete
+                            if (boxes == ptr) {
+                                boxes = ptr->next;
+                            } else {
+                                parent->next = ptr->next;
+                            }
+                            printEvent(connection, "> OK!");
+                            respond(connection, "OK!");
+                            return OPEN_BOX;
+                        }
+                    }
+                    parent = ptr;
+                    ptr = ptr->next;
+                }
+                // If we didn't find anything, we know that this doesn't exist
+                printError(connection, "> ER:NEXST");
+                respond(connection, "ER:NEXST");
+                return OPEN_BOX;
+            }
+        }
+    }
+    // Malformed input
+    printError(connection, "> ER:WHAT?");
+    respond(connection, "ER:WHAT?");
     return OPEN_BOX;
+
 }
 MessageBox* boxClose(int connection, char* buffer, MessageBox* OPEN_BOX) {
     if (OPEN_BOX == NULL) {
