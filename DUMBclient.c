@@ -1,5 +1,9 @@
 #include "DUMBclient.h"
 #include<string.h>
+#include<sys/socket.h>
+#include<arpa/inet.h>
+
+#define MAX_TRIES 3
 #define COMMAND_COUNT 7
 #define MAX_INPUT 256
 
@@ -69,13 +73,29 @@ int command_handler(int command_key) {
     return 0;
 }
 
-int init_client() {
-    //This method initializes all the commands and stores them into the array.
-    int i = 0;
-    for (i; i < COMMAND_COUNT; i++) {
-
+int init_connection(char* ip_address, char* port) {
+    int tries = 0;
+    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < -1) {
+        printf("Error creating socket. Exiting...\n");
+        exit(0);
     }
-
+    printf("Created socket successfully.\nAttempting to connect to %s:%s...\n", ip_address, port);
+    struct sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(atoi(port));
+    inet_pton(AF_INET, ip_address, &server_address.sin_addr);
+    while (tries < MAX_TRIES) {
+        if (connect(sock, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) {
+            printf("Failed to connect.. Reattempting...\n");
+        } else {
+            printf("Connected!\n");
+            return sock;
+        }
+        tries++;
+    }
+    printf("Failed to create socket after %d tries\n.", MAX_TRIES);
+    exit(0);
 }
 
 int main(int argc, char** argv) {
@@ -84,25 +104,15 @@ int main(int argc, char** argv) {
         exit(0);
     }
     //Try to call the server three times.
-    int connected = 1;
-    int tries = 0;
-    while (tries < 3 && !connected) {
-        //Attempt socket connection here.
-        //Need to implement if statement to exit if unsuccessful after three tries.
-        printf("Attempting to connect to %s:%s...\n", argv[1], argv[2]);
-        tries++;
-    }
-    if (!connected) {
-        printf("Unable to connect, exiting\n");
-        exit(0);
-    }
-    while (connected) {
+    int sock = init_connection(argv[1], argv[2]);
+    while (sock) {
         int command_key = validate_command(get_input(">"));
         if (command_key == -1) continue; //This means that the help command was called, continue to next command.
         if (command_key < 7) {
             //We know what command it is because the index is the command.
             //Call the command handler and pass in the index (command key).
-            command_handler(command_key);
+            send(sock, COMMANDS[command_key], strlen(COMMANDS[command_key]), 0);
+            //command_handler(command_key);
         } else {
             printf("That is not a command, for a command list enter 'help'\n");
         }
