@@ -23,7 +23,11 @@ typedef struct messageQueue {
 typedef struct messageBox {
     char* name;
     Message* messages;
+    int isOpen;
+    struct messageBox* next;
 } MessageBox;
+
+MessageBox* boxes = NULL;
 
 typedef struct connectionInput {
     pthread_t* id;
@@ -57,10 +61,11 @@ void _print(FILE* stream, int socket, char* message);
 
 void respond(int socket, char* message);
 
-int boxCreate(char* name);
-int boxDelete(char* name);
-MessageBox boxGet(char* name);
-int boxAddMessage(char* name, char* message, int length);
-Message boxNextMessage(char* name);
+MessageBox* boxCreate(int connection, char* buffer, MessageBox* OPEN_BOX);
+MessageBox* boxOpen(int connection, char* buffer, MessageBox* OPEN_BOX);
+MessageBox* boxPut(int connection, char* buffer, MessageBox* OPEN_BOX);
+MessageBox* boxGet(int connection, char* buffer, MessageBox* OPEN_BOX);
+MessageBox* boxDelete(int connection, char* buffer, MessageBox* OPEN_BOX);
+MessageBox* boxClose(int connection, char* buffer, MessageBox* OPEN_BOX);
 
 #endif  // DUMBSERVER_H_
