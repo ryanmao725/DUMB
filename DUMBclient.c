@@ -16,8 +16,8 @@ typedef struct command {
 } command;
 
 static command COMMAND_LIST[COMMAND_COUNT];
-static char* COMMANDS[COMMAND_COUNT] = {"quit","create","open","next","put","delete","close"};
-static char* SERVER_COMMANDS[COMMAND_COUNT] = {"GDBYE", "CREAT", "OPNBX", "NXTMG", "PUTMG", "DELBX", "CLSBX"};
+static char* COMMANDS[COMMAND_COUNT] = {"quit\0","create\0","open\0","next\0","put\0","delete\0","close\0"};
+static char* SERVER_COMMANDS[COMMAND_COUNT] = {"GDBYE\0", "CREAT\0", "OPNBX\0", "NXTMG\0", "PUTMG\0", "DELBX\0", "CLSBX\0"};
 static int COMMAND_ARGS[COMMAND_COUNT] = {0, 1, 1, 0, 2, 1, 1};
 
 char* get_input(char* prompt) {
@@ -60,16 +60,34 @@ void request_args(int command_key, char* args[], int arg_number){
     }
 }
 
-int command_handler(int command_key) {
+int command_handler(int command_key, int sock) {
     int arg_count = 0;
     int num_args = COMMAND_ARGS[command_key];
     //Retrieve the arguments
     char* args[num_args];
+    int i = 0;
+    for (i; i < num_args; i++) {
+        args[i] = malloc(sizeof(char) * MAX_INPUT);
+    }
+    int arg_length = 0;
     while (arg_count < num_args) {
         request_args(command_key, args, arg_count);
+        arg_length += (strlen(args[arg_count]) + 1);
         arg_count++;
     }
+    printf("Argument length: %d\n", arg_length);
     //At this point, we have the arguments and the command, now we send this information to the server, and see what happens.
+    char* send_string = malloc(sizeof(char) * (5 + arg_length));
+    printf("Total length: %d\n", 5 + arg_length);
+    strcpy(send_string, SERVER_COMMANDS[command_key]);
+    arg_count = 0;
+    arg_length = 6;
+    while (arg_count < num_args) {
+        strcpy(send_string+arg_length, args[arg_count]);
+        arg_length += (strlen(args[arg_count]) + 1);
+        arg_count++;
+    }
+    send(sock, send_string, 7 + arg_length, 0);
     return 0;
 }
 
@@ -89,12 +107,13 @@ int init_connection(char* ip_address, char* port) {
         if (connect(sock, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) {
             printf("Failed to connect.. Reattempting...\n");
         } else {
+            send(sock, "HELLO\0", 6, 0);
             printf("Connected!\n");
             return sock;
         }
         tries++;
     }
-    printf("Failed to create socket after %d tries\n.", MAX_TRIES);
+    printf("Failed to create socket after %d tries.\n", MAX_TRIES);
     exit(0);
 }
 
@@ -111,8 +130,8 @@ int main(int argc, char** argv) {
         if (command_key < 7) {
             //We know what command it is because the index is the command.
             //Call the command handler and pass in the index (command key).
-            send(sock, COMMANDS[command_key], strlen(COMMANDS[command_key]), 0);
-            //command_handler(command_key);
+            //send(sock, "s1\0s2\0", 6, 0);
+            command_handler(command_key, sock);
         } else {
             printf("That is not a command, for a command list enter 'help'\n");
         }

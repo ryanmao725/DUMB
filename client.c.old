@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
     while(1) {
         fgets(input_buffer, 256, stdin);
         input_buffer[strcspn(input_buffer,"\r\n")] = 0;
-        send(sock, "input_buffer", 256, 0);
+        send(sock, "string1\0string2", 256, 0);
     }
     return 0;
 }

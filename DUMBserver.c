@@ -13,7 +13,7 @@ int main(int argc, char** argv) {
     // Since we have the number of inputs verified, lets parse through them
     char* portString = argv[1];
     // Create the address
-    struct sockaddr_in address = createAddress(8000);
+    struct sockaddr_in address = createAddress(8080);
     // Construct the socket
     int masterSocket = socketSetup(address);
     if (masterSocket < 0) {
