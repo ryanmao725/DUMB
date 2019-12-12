@@ -18,12 +18,15 @@ typedef struct command {
 static unsigned short COMMAND_ARGS[COMMAND_COUNT] = {0, 1, 1, 0, 1, 1, 1};
 static char* COMMANDS[COMMAND_COUNT] = {"quit","create","open","next","put","delete","close"};
 static char* SERVER_COMMANDS[COMMAND_COUNT] = {"GDBYE", "CREAT", "OPNBX", "NXTMG", "PUTMG", "DELBX", "CLSBX"};
+static char* SERVER_RESPONSES[8] = {"OK!", "ER:WHAT?", "ER:EXIST", "ER:NEXST", "ER:OPEND", "ER:NOOPN", "ER:NOTMT", "ER:EMPTY"};
+static char* INTERPRET_RESPONSES[8] = {"Success!", "Your command is in some way broken or malformed.", "Box already exists.", "Box does not exist.", "Box is currently in use.", "Box is not open.", "Box is not empty.", "Box is empty."};
 
 char* get_input(char* prompt) {
     char* input_buffer = malloc(sizeof(char) * MAX_INPUT);
     printf("%s> ", prompt);
     fgets(input_buffer, MAX_INPUT, stdin);
     input_buffer[strcspn(input_buffer, "\r\n")] = 0;
+    //printf("Input: %s\n", input_buffer);
     return input_buffer;
 }
 
@@ -32,8 +35,9 @@ char* get_send_string_default(int command_key) {
     printf("Okay, which box would you like to %s?\n", COMMANDS[command_key]);
     input = get_input(COMMANDS[command_key]);
     char* arg = malloc(sizeof(char) * (strlen(input) + 1));
-    strcat(arg, " ");
-    strcat(arg, input);
+    strcpy(arg, " ");
+    strcpy(arg + 1, input);
+    //printf("Returning arg: %s\n", arg);
     return arg;
 }
 
@@ -55,12 +59,12 @@ char* get_send_string_put(int command_key) {
     int input_size = (strlen(input));
     int number_of_digits = get_number_of_digits(input_size);
     char* arg = malloc(sizeof(char) * (number_of_digits + 2 + input_size));
-    strcat(arg, "!");
+    strcpy(arg, "!");
     char* size_string = malloc(sizeof(char) * number_of_digits);
     sprintf(size_string, "%d", input_size);
-    strcat(arg, size_string);
-    strcat(arg, "!");
-    strcat(arg, input);
+    strcpy(arg + 1, size_string);
+    strcpy(arg + 1 + number_of_digits, "!");
+    strcpy(arg + 2 + number_of_digits, input);
     return arg;
 }
 
@@ -88,7 +92,35 @@ int validate_command(char* input) {
     return i;
 }
 
-int command_handler(int command_key, int sock) {
+void print_message(char* buffer) {
+    if (strchr(buffer, '!') == strrchr(buffer, '!')) {
+        //This means it coming back from put.
+        printf("Message successfully put.\n");
+    } else {
+        printf("Message: %s\n", strrchr(buffer, '!') + 1);
+    }
+}
+
+void handle_response(int sock) {
+    char* buffer = malloc(sizeof(char) * MAX_INPUT);
+    int result = read(sock, buffer, MAX_INPUT);
+    if (result == 0) {
+        printf("Socket closed.\n");
+        exit(0);
+    }
+    int i = 0;
+    for (i; i < 8; i++) {
+        if (strcmp(SERVER_RESPONSES[i], buffer) == 0) {
+            printf("%s\n", INTERPRET_RESPONSES[i]);
+            return;
+        }
+    }
+    //At this point, this means that it was a message that was receieved.
+    print_message(buffer);
+    //printf("Response: %s\n", buffer);
+}
+
+void command_handler_default(int command_key, int sock) {
     //Retrieve the arguments
     char* arg = malloc(sizeof(char) * MAX_INPUT);
     char* (*function_pointer)(int) = COMMAND_ARG_FNS[command_key];
@@ -102,14 +134,15 @@ int command_handler(int command_key, int sock) {
     //printf("Total length: %d\n", 6 + arg_length);
     strcpy(send_string, SERVER_COMMANDS[command_key]);
     strcpy(send_string + 5, arg);
-    //printf("The string being sent to the server is: %s.\n", send_string);
     send(sock, send_string, 5 + arg_length, 0);
-    char* buffer = malloc(sizeof(char) * MAX_INPUT);
-    int result = read(sock, buffer, MAX_INPUT);
-    printf("Server Response: %s.\n", buffer);
-    if (result == -1) exit(0);
-    return 0;
 }
+
+void no_argument_command(int command_key, int sock) {
+    send(sock, SERVER_COMMANDS[command_key], 5, 0);
+}
+
+//ARray of function pointers for each command
+static void (*COMMAND_FNS[COMMAND_COUNT])(int, int) = {no_argument_command, command_handler_default, command_handler_default, no_argument_command, command_handler_default, command_handler_default, command_handler_default};
 
 int init_connection(char* ip_address, char* port) {
     int tries = 0;
@@ -128,6 +161,16 @@ int init_connection(char* ip_address, char* port) {
             printf("Failed to connect.. Reattempting...\n");
         } else {
             send(sock, "HELLO", 5, 0);
+            char* buffer = malloc(sizeof(char) * MAX_INPUT);
+            int result = read(sock, buffer, MAX_INPUT, 0);
+            //printf("Server Response: %s | length: %zu.\n", buffer, strlen(buffer));
+            if (strcmp(buffer, "HELLO DUMBv0 ready!") == 0) {
+                printf("Successfully connected.\n");
+            } else {
+                printf("An error occurred. Exiting.\n");
+                exit(0);
+            }
+            free(buffer);
             return sock;
         }
         tries++;
@@ -149,7 +192,9 @@ int main(int argc, char** argv) {
         if (command_key < 7) {
             //We know what command it is because the index is the command.
             //Call the command handler and pass in the index (command key).
-            command_handler(command_key, sock);
+            void (*function_pointer)(int, int) = COMMAND_FNS[command_key];
+            function_pointer(command_key, sock);
+            handle_response(sock);
         } else {
             printf("That is not a command, for a command list enter 'help'\n");
         }
