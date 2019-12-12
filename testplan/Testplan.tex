@@ -1,0 +1,154 @@
+% Global Variables
+\def \titletext {Asst 03: DUMB Testplan}
+\def \creator {Shivan Modha and Ryan Mao}
+\def \builddate {February 08, 2018}
+\def \class {01:198:214:01}
+
+\documentclass{article}
+
+% Packages
+\usepackage[letterpaper, portrait]{geometry}
+% Configure page margins with geometry
+\geometry{left=0.5in, top=0.5in, right=0.5in, bottom=0.5in, headsep=0.2cm, footskip=0.2cm}
+\usepackage{amsfonts}
+\usepackage{enumerate}
+\usepackage{amsmath}
+\usepackage{tocloft}
+\usepackage[english]{babel}
+%\usepackage[utf8]{inputenc}
+\usepackage{fancyhdr}
+\usepackage{amssymb}
+%\usepackage{gensymb}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usepackage[makeroom]{cancel}
+\usepackage[]{units}
+
+\usepackage{amsthm}
+\usepackage{enumitem}
+
+\usepackage{latexsym,ifthen,url,rotating}
+
+\usepackage{color}
+\usepackage[md]{titlesec}
+\usepackage{float}
+\usepackage{csquotes}
+
+%\usepackage{showframe}
+\graphicspath{ {images/} }
+
+% Configure Header
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\creator}
+\chead{\class}
+\rhead{\today}
+\rfoot{\thepage}
+
+% --- -----------------------------------------------------------------
+% --- Document-specific definitions.
+% --- -----------------------------------------------------------------
+\newtheorem{definition}{Definition}
+
+\newcommand{\concat}{{\,\|\,}}
+\newcommand{\bits}{\{0,1\}}
+
+\newcommand{\unif}{\mathrm{Unif}}
+\newcommand{\bin}{\mathrm{Bin}}
+\newcommand{\ber}{\mathrm{Ber}}
+\newcommand{\hgeom}{\mathrm{HGeom}}
+\newcommand{\Var}{\mathrm{Var}}
+
+\newcommand{\messagespace}{{\color{red}\mathcal{M}}}
+\newcommand{\keyspace}{{\color{red}\mathcal{K}}}
+\newcommand{\cipherspace}{{\color{red}\mathcal{C}}}
+\newcommand{\probability}{\text{Pr}}
+\newcommand{\enc}{\mathbf{\textbf{Enc}}}
+\newcommand{\gen}{\mathbf{\textbf{Gen}}}
+\newcommand{\dec}{\mathbf{\textbf{Dec}}}
+\newcommand{\xor}{\oplus}
+\newcommand  {\QED}    {\def\qedsymbol{$\square$}\qed}
+\def\F{\mathbb{F}}     % finite field
+\def\Q{\mathbb{Q}}     % rational numbers
+\def\Z{\mathbb{Z}}     % integers
+\def\N{\mathbb{N}}     % natural numbers
+\def\R{\mathbb{R}}     % real numbers
+\def\C{\mathbb{C}}     % complex numbers
+\def\E{\mathbb{E}}     % complex numbers
+\def\O{\mathbb{O}}     % complex numbers
+
+\title{\vspace{-0.5cm}\titletext}
+\date{\vspace{-5ex}}
+
+\begin{document}
+    \maketitle
+    \thispagestyle{fancy}
+    \vspace{-1.0cm}
+
+    \section{Introduction}
+        Not only do we want successful communication between a DUMB client and a DUMB server, but we also want to ensure a high QOL standard. This means extensively testing our DUMB client and DUMB server so that they are as bug-free and convenient as possible.
+        \subsection{Definitions:}
+            \textbf{Client:} The DUMB client. \newline
+            \textbf{Server:} The DUMB server. \newline
+            \textbf{Dummy Client:} A alien client written in an attempt to find faults within the server.
+        \subsection{Procedure:} 
+            We determined that this project could essentially be broken down into sets of functionalities. I.E. Each command has an opposite command, and we would like to test both commands at the same time.
+            \begin{itemize}
+                \item[1.] First and foremost, we would like to have functional connection/disconnection. (2.1)
+                \item[2.] Next, creation and deletion of boxes. (2.2)
+                \item[3.] Followed by opening and closing of boxes. (2.3)
+                \item[4.] And lastly, putting and retrieving messages. (2.4)
+                \item[5.] Extreme edge cases/error handling. (2.5) 
+            \end{itemize}
+    \section{Testsuites}
+        \subsection{Connections}
+            Prerequisite: Establishing connections.
+            \begin{itemize}
+                \item[1.] Establish a connection to \textbf{Server}. Accept a "HELLO" from the \textbf{Client}, and respond with "HELLO DUMBv0 ready!". Make sure that both parties are content with these responses, and have acted accordingly.
+                \item[2.] Establish a connection to \textbf{Server} using \textbf{Dummy Client}. Since there is no "handshake" using "HELLO", the \textbf{Server} will reject the \textbf{Dummy Client}. This results in a special error that we have classified as \textit{ER: INVCL}.
+                \item[3.] Quit. Close the connection with the \textbf{Client} sending "GDBYE", and determining the connection has closed. Then exit the \textbf{Client}.
+                \item[4.] Hosting the \textbf{Server} on a different computer, and connecting the \textbf{Client} through both ip-address and hostnames. 
+            \end{itemize}
+        \subsection{Create/Delete}
+            First, we want to make sure that creation and deletion of boxes is functional. For this, we go through the following test:
+            \begin{itemize}
+                \item[1.] Create a box, then delete it. Attempt to open that same box. This should result in an error.
+                \item[2.] Attempt to delete a non-existant box. This should result in an error.
+                \item[3.] Create a box, then attempt to create another box under the same name. This should result in an error.
+                \item[4.] Give the create and delete commands a box name that is incompatible. This should result in an error.   
+            \end{itemize}
+            Upon completion of this test, we can safely presume that our creation and deletion functions are working, disregarding cases where boxes contain messages. Next, we want to ensure the boxes can be opened and closed. 
+        \subsection{Open/Close}
+        Assume that we already have multiple boxes created without error.
+            \begin{itemize}
+                \item[1.] Open a box, then simply close it. Attempt to open the box again. This should not result in any errors.
+                \item[2.] Close a box without opening a box. This should result in an error.
+                \item[3.] Open a box, then have another instance of \textbf{Client} attempt to open the same box. This should result in an error.
+                \item[4.] Open a box, then have another instance of \textbf{Client} attempt to close the box. This should result in an error. 
+                \item[5.] Open a box, then attempt to open a box without closing the previous box. This should result in an error. 
+            \end{itemize}
+            Completion of this test finally allows us to test message creation and deletion. 
+        \subsection{Put/Next}
+        Assume that we already have a box created without error.
+            \begin{itemize}
+                \item[1.] Put a message in a box, and retrieve the message using next. This should not result in an error.
+                \item[2.] Retrieve a message using next without putting a message in a box. This should result in an error.
+                \item[3.] Put 3 messages into a box, retrieve a message, and put more messages in the box. Retrieve all messages. All messages should have correct order, and this should not result in an error.  
+            \end{itemize}
+            Finishing up this test, we have proven 3 sets of functionality. We now piece them together and test more complex cases. \newline
+            \textit{Ex: Open a box, put a message, close the box, quit, reconnect, open the same box, and retrieve the message.}
+        \subsection{Extreme cases/error handling}
+        In these tests, we want to cover what we could not through our testing of each set of commands.
+            \begin{itemize}
+                \item[1.] Give poor arguments to each command. (I.E. Not providing the correct box name, putting an empty message)
+                \item[2.] Using put and next when there is not a box open.
+                \item[3.] Deleting a box that is already open.
+                \item[4.] Deleting a box with messages.    
+                \item[5.] Testing our mutex. Our mutex will lock other threads whenever a Create/Delete is called. After completion of the command, activity resumes as normal.
+            \end{itemize}
+    \section{Conclusion}
+        We believe these testsuites described will prove that our \textbf{Client} and \textbf{Server} are not only extremely powerful, but very safe and secure. Through these series of testsuites, we have shown that our commands are highly functional and intelligent in regards to error detection and reporting.
+\end{document}
