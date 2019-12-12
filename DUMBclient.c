@@ -105,7 +105,7 @@ void handle_response(int sock) {
     char* buffer = malloc(sizeof(char) * MAX_INPUT);
     int result = read(sock, buffer, MAX_INPUT);
     if (result == 0) {
-        printf("Socket closed.\n");
+        printf("Connection closed.\n");
         exit(0);
     }
     int i = 0;
