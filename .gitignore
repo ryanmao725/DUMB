@@ -1,2 +1,4 @@
 DUMBclient
 DUMBserve
+.nfs*
+client
