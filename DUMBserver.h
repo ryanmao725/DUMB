@@ -29,6 +29,8 @@ typedef struct messageBox {
 
 MessageBox* boxes = NULL;
 
+pthread_mutex_t* boxesLock = NULL;
+
 typedef struct connectionInput {
     pthread_t* id;
     int connection;
