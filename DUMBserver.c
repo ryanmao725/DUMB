@@ -30,7 +30,9 @@ int main(int argc, char** argv) {
     socketLoop(address, masterSocket);
     return 0;
 }
-
+/**
+ * Create an address structure given a port number
+ */
 struct sockaddr_in createAddress(int port) {
     // Create the socket structure for later use
     struct sockaddr_in _return;
@@ -39,7 +41,9 @@ struct sockaddr_in createAddress(int port) {
     _return.sin_port = htons(port);
     return _return;
 }
-
+/**
+ * Setup the default socket server
+ */
 int socketSetup(struct sockaddr_in address) {
     int success = 0;
     // Notify that we are spawning the server
@@ -71,7 +75,9 @@ int socketSetup(struct sockaddr_in address) {
     }
     return socketServer;
 }
-
+/**
+ * Handle the main message loop for the socket server
+ */
 void socketLoop(struct sockaddr_in address, int masterSocket) {
     // Initialize the mutexs
     boxesLock = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
@@ -111,8 +117,9 @@ void socketLoop(struct sockaddr_in address, int masterSocket) {
         }
     }
 }
-
-
+/**
+ * Helper function to normalize log outputs
+ */
 void _print(FILE* stream, int socket, char* message) {
     // Get the address
     struct sockaddr_in address;
@@ -127,22 +134,30 @@ void _print(FILE* stream, int socket, char* message) {
     // Print it out with the requested stream
     fprintf(stream, "%02d:%02d %02d %s %s %s\n", now_tm->tm_hour, now_tm->tm_min, now_tm->tm_mday, MONTH[now_tm->tm_mon], str, message);
 }
-
+/**
+ * Helper function so that we don't have to send in the stream
+ */
 void printEvent(int socket, char* message) {
     // Print to STDOUT
     _print(stdout, socket, message);
 }
-
+/**
+ * Helper function so that we don't have to send in the stream
+ */
 void printError(int socket, char* message) {
     // Print to STDERR
     _print(stderr, socket, message);
 }
-
+/**
+ * Helper function to normalize server responses
+ */
 void respond(int socket, char* message) {
     // Respond the the client
     send(socket, message, strlen(message), 0);
 }
-
+/**
+ * Main message loop for the worker threads
+ */
 void* connectionWorker(void* vargp) {
     // Parse through the inputs
     ConnectionInput* input = (ConnectionInput*) vargp;
@@ -209,7 +224,9 @@ void* connectionWorker(void* vargp) {
         }
     }
 }
-
+/**
+ * Functional: Create message box
+ */
 MessageBox* boxCreate(int connection, char* buffer, MessageBox* OPEN_BOX) {
     // Verify that there is an argument
     if (*(buffer + 5) == ' ') {
@@ -261,6 +278,9 @@ MessageBox* boxCreate(int connection, char* buffer, MessageBox* OPEN_BOX) {
     respond(connection, "ER:WHAT?");
     return OPEN_BOX;
 }
+/**
+ * Functional: Open a message box
+ */
 MessageBox* boxOpen(int connection, char* buffer, MessageBox* OPEN_BOX) {
     // Verify that there is an argument
     if (*(buffer + 5) == ' ') {
@@ -306,6 +326,9 @@ MessageBox* boxOpen(int connection, char* buffer, MessageBox* OPEN_BOX) {
     respond(connection, "ER:WHAT?");
     return OPEN_BOX;
 }
+/**
+ * Functional: Get the next message from the box
+ */
 MessageBox* boxGet(int connection, char* buffer, MessageBox* OPEN_BOX) {
     // Check if we have an open box
     if (OPEN_BOX == NULL) {
@@ -337,6 +360,9 @@ MessageBox* boxGet(int connection, char* buffer, MessageBox* OPEN_BOX) {
     respond(connection, output);
     return OPEN_BOX;
 }
+/**
+ * Functional: Put a particular message in the box
+ */
 MessageBox* boxPut(int connection, char* buffer, MessageBox* OPEN_BOX) {
     // Verify that there is an argument
     if (*(buffer + 5) == '!') {
@@ -388,6 +414,9 @@ MessageBox* boxPut(int connection, char* buffer, MessageBox* OPEN_BOX) {
     respond(connection, "ER:WHAT?");
     return OPEN_BOX;
 }
+/**
+ * Functional: Delete a box
+ */
 MessageBox* boxDelete(int connection, char* buffer, MessageBox* OPEN_BOX) {
     // Verify that there is an argument
     if (*(buffer + 5) == ' ') {
@@ -439,8 +468,10 @@ MessageBox* boxDelete(int connection, char* buffer, MessageBox* OPEN_BOX) {
     printError(connection, "> ER:WHAT?");
     respond(connection, "ER:WHAT?");
     return OPEN_BOX;
-
 }
+/**
+ * Functional: Close a message box
+ */
 MessageBox* boxClose(int connection, char* buffer, MessageBox* OPEN_BOX) {
     // Verify that there is an argument
     if (*(buffer + 5) == ' ') {

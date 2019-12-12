@@ -1,11 +1,18 @@
 #include "DUMBclient.h"
 
+/**
+ * Retrieves the input from the string
+ */
 char* get_input(char* prompt) {
+    // Allocate the memory
     char* input_buffer = malloc(sizeof(char) * MAX_INPUT);
+    // Print the prompt to the user
     printf("%s> ", prompt);
+    // Read in the prompt result
     fgets(input_buffer, MAX_INPUT, stdin);
+    // Set the input buffer
     input_buffer[strcspn(input_buffer, "\r\n")] = 0;
-    //printf("Input: %s\n", input_buffer);
+    // return
     return input_buffer;
 }
 
@@ -180,4 +187,3 @@ int main(int argc, char** argv) {
     }
     return 0;
 }
-
