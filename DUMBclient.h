@@ -50,7 +50,7 @@ static char* SERVER_COMMANDS[COMMAND_COUNT] = {
     "DELBX",
     "CLSBX"
 };
-static char* SERVER_RESPONSES[8] = {
+static char* SERVER_RESPONSES[10] = {
     "OK!",
     "ER:WHAT?",
     "ER:EXIST",
@@ -58,9 +58,21 @@ static char* SERVER_RESPONSES[8] = {
     "ER:OPEND",
     "ER:NOOPN",
     "ER:NOTMT",
-    "ER:EMPTY"
+    "ER:EMPTY",
+    "ER:INVCL",
+    "ER:NCLSD",
 };
-static char* INTERPRET_RESPONSES[8] = {"Success!", "Your command is in some way broken or malformed.", "Box already exists.", "Box does not exist.", "Box is currently in use.", "Box is not open.", "Box is not empty.", "Box is empty."};
-
+static char* INTERPRET_RESPONSES[10] = {
+    "Success!", 
+    "Your command is in some way broken or malformed.", 
+    "Box already exists.", 
+    "Box does not exist.", 
+    "Box is currently in use.", 
+    "Box is not open.", 
+    "Box is not empty.", 
+    "Box is empty.", 
+    "Invalid client.", 
+    "Box is not closed."
+};
 
 #endif  // DUMBCLIENT_H_
