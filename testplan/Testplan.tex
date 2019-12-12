@@ -89,7 +89,7 @@
     \vspace{-1.0cm}
 
     \section{Introduction}
-        Not only do we want successful communication between a DUMB client and a DUMB server, but we also want to ensure the safety of our server.
+        Not only do we want successful communication between a DUMB client and a DUMB server, but we also want to ensure a high QOL standard. This means extensively testing our DUMB client and DUMB server so that they are as bug-free and convenient as possible.
         \subsection{Definitions:}
             \textbf{Client:} The DUMB client. \newline
             \textbf{Server:} The DUMB server. \newline
@@ -110,6 +110,7 @@
                 \item[1.] Establish a connection to \textbf{Server}. Accept a "HELLO" from the \textbf{Client}, and respond with "HELLO DUMBv0 ready!". Make sure that both parties are content with these responses, and have acted accordingly.
                 \item[2.] Establish a connection to \textbf{Server} using \textbf{Dummy Client}. Since there is no "handshake" using "HELLO", the \textbf{Server} will reject the \textbf{Dummy Client}. This results in a special error that we have classified as \textit{ER: INVCL}.
                 \item[3.] Quit. Close the connection with the \textbf{Client} sending "GDBYE", and determining the connection has closed. Then exit the \textbf{Client}.
+                \item[4.] Hosting the \textbf{Server} on a different computer, and connecting the \textbf{Client} through both ip-address and hostnames. 
             \end{itemize}
         \subsection{Create/Delete}
             First, we want to make sure that creation and deletion of boxes is functional. For this, we go through the following test:
@@ -146,6 +147,7 @@
                 \item[2.] Using put and next when there is not a box open.
                 \item[3.] Deleting a box that is already open.
                 \item[4.] Deleting a box with messages.    
+                \item[5.] Testing our mutex. Our mutex will lock other threads whenever a Create/Delete is called. After completion of the command, activity resumes as normal.
             \end{itemize}
     \section{Conclusion}
         We believe these testsuites described will prove that our \textbf{Client} and \textbf{Server} are not only extremely powerful, but very safe and secure. Through these series of testsuites, we have shown that our commands are highly functional and intelligent in regards to error detection and reporting.
