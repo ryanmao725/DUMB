@@ -73,6 +73,8 @@ int socketSetup(struct sockaddr_in address) {
 }
 
 void socketLoop(struct sockaddr_in address, int masterSocket) {
+    // Initialize the mutexs
+    boxesLock = (pthread_mutex_t*) malloc(sizeof(pthread_mutex_t));
     // Get a hold of the address size
     int addressLength = sizeof(address);
     // Begin the main worker loop
@@ -102,8 +104,8 @@ void socketLoop(struct sockaddr_in address, int masterSocket) {
                 respond(connection, "HELLO DUMBv0 ready!");
             } else {
                 // This client couldn't connect properly since it was invalid
-                printError(connection, "ER:INVCL");
-                respond(connection, "ER:INVCL\0");
+                printError(connection, "> ER:INVCL");
+                respond(connection, "ER:INVCL");
                 close(connection);
             }
         }
@@ -174,15 +176,20 @@ void* connectionWorker(void* vargp) {
                     }
                     valread = 0;
                 } else if (strcmp(cmd, "CREAT") == 0) {
+                    pthread_mutex_lock(boxesLock);
                     OPEN_BOX = boxCreate(connection, buffer, OPEN_BOX);
+                    pthread_mutex_unlock(boxesLock);
                 } else if (strcmp(cmd, "OPNBX") == 0) {
+                    sleep(1);
                     OPEN_BOX = boxOpen(connection, buffer, OPEN_BOX);
                 } else if (strcmp(cmd, "NXTMG") == 0) {
                     OPEN_BOX = boxGet(connection, buffer, OPEN_BOX);
                 } else if (strcmp(cmd, "PUTMG") == 0) {
                     OPEN_BOX = boxPut(connection, buffer, OPEN_BOX);
                 } else if (strcmp(cmd, "DELBX") == 0) {
+                    pthread_mutex_lock(boxesLock);
                     OPEN_BOX = boxDelete(connection, buffer, OPEN_BOX);
+                    pthread_mutex_unlock(boxesLock);
                 } else if (strcmp(cmd, "CLSBX") == 0) {
                     OPEN_BOX = boxClose(connection, buffer, OPEN_BOX);
                 } else {
