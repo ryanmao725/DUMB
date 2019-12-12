@@ -130,6 +130,12 @@ void no_argument_command(int command_key, int sock) {
 //ARray of function pointers for each command
 static void (*COMMAND_FNS[COMMAND_COUNT])(int, int) = {no_argument_command, command_handler_default, command_handler_default, no_argument_command, command_handler_default, command_handler_default, command_handler_default};
 
+char* normalizeAddress(char* _in) {
+    struct hostent* host_entry = gethostbyname(_in);
+    char* address = inet_ntoa(*((struct in_addr*) host_entry->h_addr_list[0]));
+    return address;
+}
+
 int init_connection(char* ip_address, char* port) {
     int tries = 0;
     int sock = socket(AF_INET, SOCK_STREAM, 0);
@@ -141,7 +147,8 @@ int init_connection(char* ip_address, char* port) {
     struct sockaddr_in server_address;
     server_address.sin_family = AF_INET;
     server_address.sin_port = htons(atoi(port));
-    inet_pton(AF_INET, ip_address, &server_address.sin_addr);
+    char* addr = normalizeAddress(ip_address);
+    inet_pton(AF_INET, addr, &server_address.sin_addr);
     while (tries < MAX_TRIES) {
         if (connect(sock, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) {
             printf("Failed to connect.. Reattempting...\n");
