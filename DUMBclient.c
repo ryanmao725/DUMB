@@ -132,6 +132,9 @@ static void (*COMMAND_FNS[COMMAND_COUNT])(int, int) = {no_argument_command, comm
 
 char* normalizeAddress(char* _in) {
     struct hostent* host_entry = gethostbyname(_in);
+    if (host_entry == NULL) {
+        return _in;
+    }
     char* address = inet_ntoa(*((struct in_addr*) host_entry->h_addr_list[0]));
     return address;
 }
