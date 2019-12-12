@@ -63,15 +63,15 @@ static char* SERVER_RESPONSES[10] = {
     "ER:NCLSD",
 };
 static char* INTERPRET_RESPONSES[10] = {
-    "Success!", 
-    "Your command is in some way broken or malformed.", 
-    "Box already exists.", 
-    "Box does not exist.", 
-    "Box is currently in use.", 
-    "Box is not open.", 
-    "Box is not empty.", 
-    "Box is empty.", 
-    "Invalid client.", 
+    "Success!",
+    "Your command is in some way broken or malformed.",
+    "Box already exists.",
+    "Box does not exist.",
+    "Box is currently in use.",
+    "Box is not open.",
+    "Box is not empty.",
+    "Box is empty.",
+    "Invalid client.",
     "Box is not closed."
 };
 
