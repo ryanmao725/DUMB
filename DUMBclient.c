@@ -88,7 +88,7 @@ void handle_response(int sock) {
         exit(0);
     }
     int i = 0;
-    for (i; i < 8; i++) {
+    for (i; i < 10; i++) {
         if (strcmp(SERVER_RESPONSES[i], buffer) == 0) {
             printf("%s\n", INTERPRET_RESPONSES[i]);
             return;
