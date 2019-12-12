@@ -169,6 +169,9 @@ void* connectionWorker(void* vargp) {
                 } else if (strcmp(cmd, "GDBYE") == 0) {
                     printEvent(connection, "> Killed");
                     close(connection);
+                    if (OPEN_BOX != NULL) {
+                        OPEN_BOX->isOpen = 0;
+                    }
                     valread = 0;
                 } else if (strcmp(cmd, "CREAT") == 0) {
                     OPEN_BOX = boxCreate(connection, buffer, OPEN_BOX);
@@ -194,6 +197,9 @@ void* connectionWorker(void* vargp) {
     // The client disconnected
     if (valread == 0) {
         printEvent(connection, "Disconnected");
+        if (OPEN_BOX != NULL) {
+            OPEN_BOX->isOpen = 0;
+        }
     }
 }
 
@@ -294,9 +300,85 @@ MessageBox* boxOpen(int connection, char* buffer, MessageBox* OPEN_BOX) {
     return OPEN_BOX;
 }
 MessageBox* boxGet(int connection, char* buffer, MessageBox* OPEN_BOX) {
+    // Check if we have an open box
+    if (OPEN_BOX == NULL) {
+        printError(connection, "> ER:NOOPN");
+        respond(connection, "ER:NOOPN");
+        return OPEN_BOX;
+    }
+    // Check to see if we have any messages
+    if (OPEN_BOX->messages == NULL) {
+        printError(connection, "> ER:EMPTY");
+        respond(connection, "ER:EMPTY");
+        return OPEN_BOX;
+    }
+    Message* msg = OPEN_BOX->messages;
+    OPEN_BOX->messages = OPEN_BOX->messages->next;
+    char* length = (char*)malloc(sizeof(char) * 20);
+    sprintf(length, "%d", msg->length);
+    char* output = (char*)malloc(sizeof(char) * (4 + strlen(length) + strlen(msg->message)));
+    strcpy(output, "OK!");
+    strcpy(output + 3, length);
+    strcpy(output + 3 + strlen(length), "!");
+    char* ms = (char*)malloc(sizeof(char) * msg->length);
+    strncpy(ms, msg->message, msg->length);
+    strcpy(output + 4 + strlen(length), ms);
+    char* logOut = (char*)malloc(sizeof(char) * (6 + strlen(length) + strlen(msg->message)));
+    strcpy(logOut, "> ");
+    strcpy(logOut + 2, output);
+    printEvent(connection, logOut);
+    respond(connection, output);
     return OPEN_BOX;
 }
 MessageBox* boxPut(int connection, char* buffer, MessageBox* OPEN_BOX) {
+    // Verify that there is an argument
+    if (*(buffer + 5) == '!') {
+        char* arguments = buffer + 6;
+        if (arguments[0] == '!') {
+            printError(connection, "> ER:WHAT?");
+            respond(connection, "ER:WHAT?");
+            return OPEN_BOX;
+        }
+        char* message = (char*)malloc(sizeof(char) * strlen(arguments));
+        strcpy(message, arguments);
+        char* length = strtok(message, "!");
+        if (strlen(length) == 0) {
+            printError(connection, "> ER:WHAT?");
+            respond(connection, "ER:WHAT?");
+            return OPEN_BOX;
+        }
+        message = arguments + strlen(length);
+        if (message[0] == '!') {
+            // Extract the message
+            char* mes = (char*)malloc(sizeof(char) * atoi(length));
+            int len = atoi(length);
+            message = message + 1;
+            strncpy(mes, message, len);
+            // Add to the queue
+            if (OPEN_BOX == NULL) {
+                // Verify that the box is open
+                printError(connection, "> ER:NOOPN");
+                respond(connection, "ER:NOOPN");
+                return OPEN_BOX;
+            }
+            Message* m = (Message*)malloc(sizeof(Message));
+            m->length = len;
+            m->message = mes;
+            m->next = OPEN_BOX->messages;
+            OPEN_BOX->messages = m;
+            char* output = (char*)malloc(sizeof(char) * (3 + strlen(length)));
+            strcpy(output, "OK!");
+            strcpy(output + 3, length);
+            char* logOut = (char*)malloc(sizeof(char) * (5 + strlen(length)));
+            strcpy(logOut, "> ");
+            strcpy(logOut + 2, output);
+            printEvent(connection, logOut);
+            respond(connection, output);
+            return OPEN_BOX;
+        }
+    }
+    printError(connection, "> ER:WHAT?");
+    respond(connection, "ER:WHAT?");
     return OPEN_BOX;
 }
 MessageBox* boxDelete(int connection, char* buffer, MessageBox* OPEN_BOX) {
@@ -353,13 +435,13 @@ MessageBox* boxDelete(int connection, char* buffer, MessageBox* OPEN_BOX) {
 
 }
 MessageBox* boxClose(int connection, char* buffer, MessageBox* OPEN_BOX) {
-    if (OPEN_BOX == NULL) {
-        printError(connection, "> ER:NOOPN");
-        respond(connection, "ER:NOOPN");
-        return OPEN_BOX;
-    }
     // Verify that there is an argument
     if (*(buffer + 5) == ' ') {
+        if (OPEN_BOX == NULL) {
+            printError(connection, "> ER:NOOPN");
+            respond(connection, "ER:NOOPN");
+            return OPEN_BOX;
+        }
         char* name = buffer + 6;
         // Verify that the length is between 5 and 25
         if (strlen(name) >= 5 && strlen(name) <= 25) {
@@ -390,5 +472,4 @@ MessageBox* boxClose(int connection, char* buffer, MessageBox* OPEN_BOX) {
     printError(connection, "> ER:WHAT?");
     respond(connection, "ER:WHAT?");
     return OPEN_BOX;
-
 }
